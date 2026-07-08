@@ -12,7 +12,6 @@ class ScoringSystemRequest(BaseModel):
         "AddScore",
         "SubtractScore",
         "ApplyBankrupt",
-        "DoublePointValue",
         "GetScore",
         "DetermineWinner",
     ]
