@@ -4,3 +4,7 @@ format:
 	uv format
 	uv run ruff check --select I --fix
 .PHONY: format
+
+start_backend:
+	uv run python backend/game_engine.py
+.PHONY: start_backend
