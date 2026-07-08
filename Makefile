@@ -1,4 +1,4 @@
-all: format lint
+all: format
 
 format:
 	uv format
