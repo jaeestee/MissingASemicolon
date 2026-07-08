@@ -2,7 +2,7 @@
 
 import random
 
-from .schema import WheelOutcome
+from backend.wheel_system.schema import WheelOutcome
 
 
 def SpinWheel():

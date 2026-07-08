@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api_responses import (
+from backend.game_engine.schema import (
     HealthResponse,
     WheelSpinResponse,
     ScoreOperationResponse,
