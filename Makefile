@@ -6,5 +6,5 @@ format:
 .PHONY: format
 
 start_backend:
-	uv run python backend/game_engine.py
+	uv run python backend/main.py
 .PHONY: start_backend
