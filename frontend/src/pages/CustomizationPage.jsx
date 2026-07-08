@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { startGame as startGameAPI } from "../api/gameEngineAPI";
 
 
 function CustomizationPage({ setPage }) {
@@ -18,15 +19,16 @@ function CustomizationPage({ setPage }) {
     }
 
 
-    function startGame() {
+    async function startGame() {
+        const filteredPlayers = players.filter((player) => player.trim() !== "");
 
-        console.log("Players:", players);
-
-        // Later:
-        // send StartGame(players) to Game Engine
-
-        setPage("wheel");
-
+        try {
+            const result = await startGameAPI(filteredPlayers);
+            console.log("Game started:", result);
+            setPage("wheel");
+        } catch (error) {
+            console.error("Unable to start game:", error);
+        }
     }
 
 

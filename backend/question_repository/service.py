@@ -32,6 +32,7 @@ class QuestionService:
 
     def SaveQuestions(self):
         """This function saves the 5 questions for each of the 6 categories into the database."""
+        self.questions = []
         for category in self.categories:
             category_questions = [
                 question

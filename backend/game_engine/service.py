@@ -2,6 +2,22 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+
+class AnswerSubmissionRequest(BaseModel):
+    player: str
+    answer: str
+    correct_choice: str
+    points: int = 100
+
+
+class TurnPayload(BaseModel):
+    category: str
+    question: str
+    choices: list[str]
+    correct_choice: str
+    outcome: str
 
 from backend.api_responses import (
     HealthResponse,
@@ -30,7 +46,9 @@ from backend.wheel_system.service import SpinWheel
 app = FastAPI(debug=True)
 
 origins = [
-    "http://localhost:3000"
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 app.add_middleware(
@@ -44,6 +62,50 @@ app.add_middleware(
 question_service = QuestionService()
 
 
+class StartGameRequest(BaseModel):
+    players: list[str]
+
+
+class SpinWheelRequest(BaseModel):
+    category: str | None = None
+
+
+def build_turn_payload(outcome: str, question_service: QuestionService, category: str | None = None):
+    question_service.categories = []
+    question_service.questions = []
+    question_service.GetCategories()
+    question_service.SaveQuestions()
+
+    available_categories = sorted({q.category for q in question_service.all_questions})
+    selected_category = category if category in available_categories else available_categories[0]
+
+    try:
+        question = question_service.GetRandomQuestion(selected_category)
+        q = next(
+            item
+            for item in question_service.questions
+            if item.category == selected_category and item.question == question
+        )
+    except ValueError:
+        fallback_category = available_categories[0]
+        question = question_service.GetRandomQuestion(fallback_category)
+        q = next(
+            item
+            for item in question_service.questions
+            if item.category == fallback_category and item.question == question
+        )
+        selected_category = fallback_category
+
+    choices = [q.correct_choice, q.choice_b, q.choice_c]
+    return {
+        "category": selected_category,
+        "question": q.question,
+        "choices": choices,
+        "correct_choice": q.correct_choice,
+        "outcome": outcome,
+    }
+
+
 @app.get("/", response_model=dict)
 def read_root():
     return {"message": "Welcome to the Game Engine API"}
@@ -54,12 +116,37 @@ def health_check():
     return {"status": "healthy"}
 
 
+@app.post("/start-game")
+def start_game(request: StartGameRequest):
+    return {"message": "Game started", "players": request.players}
+
+
 @app.post("/wheel/spin", response_model=WheelSpinResponse)
 def spin_wheel(request: WheelSystemRequest):
     if request.request_type == "SpinWheel":
         outcome = SpinWheel()
         return {"outcome": outcome}
     return {"outcome": "Lose Turn"}
+
+
+@app.post("/turn", response_model=TurnPayload)
+def create_turn(request: SpinWheelRequest):
+    outcome = SpinWheel()
+    return build_turn_payload(str(outcome), question_service, request.category)
+
+
+@app.post("/spin-wheel", response_model=WheelSpinResponse)
+def spin_wheel_compat(request: WheelSystemRequest):
+    return spin_wheel(request)
+
+
+@app.post("/answer")
+def submit_answer(request: AnswerSubmissionRequest):
+    if request.answer == request.correct_choice:
+        AddScore(request.player, request.points)
+        return {"correct": True, "message": "Correct answer!", "player": request.player}
+
+    return {"correct": False, "message": "Incorrect answer.", "player": request.player}
 
 
 @app.post("/scoring/add", response_model=ScoreOperationResponse)

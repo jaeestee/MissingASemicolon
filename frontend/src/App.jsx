@@ -12,6 +12,7 @@ import CongratsPage from "./pages/CongratsPage";
 function App() {
 
   const [page, setPage] = useState("title");
+  const [turn, setTurn] = useState(null);
 
 
   return (
@@ -30,7 +31,7 @@ function App() {
       }
 
       {page === "wheel" &&
-        <WheelPage setPage={setPage}/>
+        <WheelPage setPage={setPage} setTurn={setTurn} />
       }
 
       {page === "jeopardy" &&
@@ -38,7 +39,7 @@ function App() {
       }
 
       {page === "question" &&
-        <QuestionPage setPage={setPage}/>
+        <QuestionPage setPage={setPage} turn={turn} />
       }
 
       {page === "congrats" &&
