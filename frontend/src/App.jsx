@@ -13,6 +13,11 @@ function App() {
 
   const [page, setPage] = useState("title");
   const [turn, setTurn] = useState(null);
+  const [players, setPlayers] = useState([]);
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  const [scores, setScores] = useState({});
+  const [freeSpins, setFreeSpins] = useState({});
+  const [winner, setWinner] = useState(null);
 
 
   return (
@@ -27,11 +32,21 @@ function App() {
       }
 
       {page === "customize" &&
-        <CustomizationPage setPage={setPage}/>
+        <CustomizationPage setPage={setPage} setPlayers={setPlayers} setScores={setScores} setFreeSpins={setFreeSpins} />
       }
 
       {page === "wheel" &&
-        <WheelPage setPage={setPage} setTurn={setTurn} />
+        <WheelPage
+          setPage={setPage}
+          setTurn={setTurn}
+          players={players}
+          currentPlayerIndex={currentPlayerIndex}
+          scores={scores}
+          freeSpins={freeSpins}
+          setCurrentPlayerIndex={setCurrentPlayerIndex}
+          setScores={setScores}
+          setFreeSpins={setFreeSpins}
+        />
       }
 
       {page === "jeopardy" &&
@@ -39,11 +54,22 @@ function App() {
       }
 
       {page === "question" &&
-        <QuestionPage setPage={setPage} turn={turn} />
+        <QuestionPage
+          setPage={setPage}
+          turn={turn}
+          players={players}
+          currentPlayerIndex={currentPlayerIndex}
+          scores={scores}
+          setScores={setScores}
+          setCurrentPlayerIndex={setCurrentPlayerIndex}
+          freeSpins={freeSpins}
+          setFreeSpins={setFreeSpins}
+          setWinner={setWinner}
+        />
       }
 
       {page === "congrats" &&
-        <CongratsPage/>
+        <CongratsPage winner={winner} scores={scores} players={players} />
       }
 
     </div>

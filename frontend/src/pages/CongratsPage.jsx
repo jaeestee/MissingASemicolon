@@ -1,7 +1,8 @@
-function CongratsPage() {
+function CongratsPage({ winner, scores = {}, players = [] }) {
 
 
-    const winner = "Player 1";
+    const winnerName = winner || players[0] || "Player 1";
+    const winnerScore = scores[winnerName] || 0;
 
 
     return (
@@ -14,9 +15,12 @@ function CongratsPage() {
 
 
             <h2>
-                Winner: {winner}
+                Winner: {winnerName}
             </h2>
 
+            <p>
+                Final score: {winnerScore}
+            </p>
 
             <p>
                 Thanks for playing Wheel of Jeopardy!

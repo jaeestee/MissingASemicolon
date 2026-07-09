@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createTurn, spinWheel } from "../api/gameEngineAPI";
 
 
-function WheelPage({ setPage, setTurn: setAppTurn }) {
+function WheelPage({ setPage, setTurn: setAppTurn, players, currentPlayerIndex, scores, freeSpins, setCurrentPlayerIndex, setScores, setFreeSpins }) {
     const [spinResult, setSpinResult] = useState(null);
     const [turn, setTurnState] = useState(null);
 
@@ -31,6 +31,14 @@ function WheelPage({ setPage, setTurn: setAppTurn }) {
             <h2>Wheel</h2>
 
             <button onClick={handleSpin}>Spin Wheel</button>
+
+            {players.length > 0 && (
+                <div>
+                    <p>Current player: {players[currentPlayerIndex] || "Player 1"}</p>
+                    <p>Scores: {players.map((player) => `${player}: ${scores[player] || 0}`).join(" | ")}</p>
+                    <p>Free spins: {players.map((player) => `${player}: ${freeSpins[player] || 0}`).join(" | ")}</p>
+                </div>
+            )}
 
             {spinResult && (
                 <p>Outcome: {spinResult.outcome}</p>

@@ -2,9 +2,9 @@ import { useState } from "react";
 import { startGame as startGameAPI } from "../api/gameEngineAPI";
 
 
-function CustomizationPage({ setPage }) {
+function CustomizationPage({ setPage, setPlayers, setScores, setFreeSpins }) {
 
-    const [players, setPlayers] = useState([
+    const [playerNames, setPlayerNames] = useState([
         "",
         ""
     ]);
@@ -12,18 +12,23 @@ function CustomizationPage({ setPage }) {
 
     function updatePlayer(index, value) {
 
-        const updatedPlayers = [...players];
+        const updatedPlayers = [...playerNames];
         updatedPlayers[index] = value;
-        setPlayers(updatedPlayers);
+        setPlayerNames(updatedPlayers);
 
     }
 
 
     async function startGame() {
-        const filteredPlayers = players.filter((player) => player.trim() !== "");
+        const filteredPlayers = playerNames.filter((player) => player.trim() !== "");
 
         try {
             const result = await startGameAPI(filteredPlayers);
+            const initialScores = Object.fromEntries(filteredPlayers.map((player) => [player, 0]));
+            const initialFreeSpins = Object.fromEntries(filteredPlayers.map((player) => [player, 0]));
+            setPlayers(filteredPlayers);
+            setScores(initialScores);
+            setFreeSpins(initialFreeSpins);
             console.log("Game started:", result);
             setPage("wheel");
         } catch (error) {
@@ -46,7 +51,7 @@ function CustomizationPage({ setPage }) {
             </p>
 
 
-            {players.map((player, index) => (
+            {playerNames.map((player, index) => (
 
                 <input
                     key={index}
