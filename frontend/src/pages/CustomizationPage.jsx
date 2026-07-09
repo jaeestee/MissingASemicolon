@@ -8,6 +8,7 @@ function CustomizationPage({ setPage, setPlayers, setScores, setFreeSpins }) {
         "",
         ""
     ]);
+    const [statusMessage, setStatusMessage] = useState("");
 
 
     function updatePlayer(index, value) {
@@ -20,9 +21,17 @@ function CustomizationPage({ setPage, setPlayers, setScores, setFreeSpins }) {
 
 
     async function startGame() {
-        const filteredPlayers = playerNames.filter((player) => player.trim() !== "");
+        const filteredPlayers = playerNames
+            .map((player) => player.trim())
+            .filter(Boolean);
+
+        if (filteredPlayers.length < 1) {
+            setStatusMessage("Please enter at least one player name.");
+            return;
+        }
 
         try {
+            setStatusMessage("Starting game...");
             const result = await startGameAPI(filteredPlayers);
             const initialScores = Object.fromEntries(filteredPlayers.map((player) => [player, 0]));
             const initialFreeSpins = Object.fromEntries(filteredPlayers.map((player) => [player, 0]));
@@ -30,9 +39,11 @@ function CustomizationPage({ setPage, setPlayers, setScores, setFreeSpins }) {
             setScores(initialScores);
             setFreeSpins(initialFreeSpins);
             console.log("Game started:", result);
+            setStatusMessage(`Game started for ${filteredPlayers.join(", ")}.`);
             setPage("wheel");
         } catch (error) {
             console.error("Unable to start game:", error);
+            setStatusMessage("Could not start the game. Please try again.");
         }
     }
 
@@ -74,6 +85,8 @@ function CustomizationPage({ setPage, setPlayers, setScores, setFreeSpins }) {
             >
                 Start Game
             </button>
+
+            {statusMessage && <p>{statusMessage}</p>}
 
 
             <button

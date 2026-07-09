@@ -22,7 +22,9 @@ function QuestionPage({ setPage, turn, players, currentPlayerIndex, scores, setS
                     return;
                 }
             }
-            setFeedback(result.message);
+            const nextIndex = players.length > 1 ? (currentPlayerIndex + 1) % players.length : 0;
+            setCurrentPlayerIndex(nextIndex);
+            setFeedback(`${result.message} Next turn: ${players[nextIndex] || "Player 1"}`);
         } catch (error) {
             console.error("Unable to submit answer:", error);
         }
@@ -44,12 +46,7 @@ function QuestionPage({ setPage, turn, players, currentPlayerIndex, scores, setS
 
             <p>{feedback}</p>
             <br />
-            <button onClick={() => {
-                const nextIndex = (currentPlayerIndex + 1) % players.length;
-                setCurrentPlayerIndex(nextIndex);
-                setPage("wheel");
-            }}>Next Turn</button>
-            <button onClick={() => setPage("wheel")}>Back to Wheel</button>
+            <button onClick={() => setPage("wheel")}>Continue to Wheel</button>
         </div>
     )
 }

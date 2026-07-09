@@ -1,5 +1,7 @@
 """This serves as the main entry point for the game engine."""
 
+import random
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -79,22 +81,33 @@ def build_turn_payload(outcome: str, question_service: QuestionService, category
     available_categories = sorted({q.category for q in question_service.all_questions})
     selected_category = category if category in available_categories else available_categories[0]
 
-    try:
-        question = question_service.GetRandomQuestion(selected_category)
-        q = next(
-            item
-            for item in question_service.questions
-            if item.category == selected_category and item.question == question
-        )
-    except ValueError:
-        fallback_category = available_categories[0]
-        question = question_service.GetRandomQuestion(fallback_category)
-        q = next(
-            item
-            for item in question_service.questions
-            if item.category == fallback_category and item.question == question
-        )
+    candidate_questions = [
+        item for item in question_service.questions if item.category == selected_category and not getattr(item, "used", False)
+    ]
+
+    if not candidate_questions:
+        fallback_category = next((cat for cat in available_categories if cat != selected_category), available_categories[0])
+        candidate_questions = [
+            item for item in question_service.questions if item.category == fallback_category and not getattr(item, "used", False)
+        ]
         selected_category = fallback_category
+
+    if not candidate_questions:
+        fallback_question = next((item for item in question_service.questions if not getattr(item, "used", False)), None)
+        if fallback_question is None:
+            fallback_question = question_service.questions[0] if question_service.questions else None
+        if fallback_question is None:
+            return {
+                "category": selected_category,
+                "question": "No questions available",
+                "choices": ["N/A"],
+                "correct_choice": "N/A",
+                "outcome": outcome,
+            }
+        q = fallback_question
+        selected_category = q.category
+    else:
+        q = random.choice(candidate_questions)
 
     choices = [q.correct_choice, q.choice_b, q.choice_c]
     return {
