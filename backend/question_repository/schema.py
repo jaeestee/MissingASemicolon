@@ -24,7 +24,7 @@ class QuestionRepositoryRequest(BaseModel):
 class QuestionAndAnswer(BaseModel):
     """Model for a question and its answer."""
 
-    model_config = ConfigDict(validate_by_alias=True)
+    model_config = ConfigDict(validate_by_alias=True, populate_by_name=True)
 
     category: str = Field(
         ..., description="The category of the question", alias="Category"
