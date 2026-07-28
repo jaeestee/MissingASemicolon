@@ -1,8 +1,11 @@
 """This serves as the main entry point for the game engine."""
 
+import logging
 import random
 
 from fastapi import FastAPI
+
+logger = logging.getLogger("uvicorn")
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -73,6 +76,7 @@ class SpinWheelRequest(BaseModel):
 
 
 def build_turn_payload(outcome: str, question_service: QuestionService, category: str | None = None):
+    logger.info("Building turn payload with outcome '%s' and category '%s'", outcome, category)
     question_service.categories = []
     question_service.questions = []
     question_service.GetCategories()
@@ -121,21 +125,25 @@ def build_turn_payload(outcome: str, question_service: QuestionService, category
 
 @app.get("/", response_model=dict)
 def read_root():
+    logger.info("GET / - root endpoint called")
     return {"message": "Welcome to the Game Engine API"}
 
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
+    logger.info("GET /health - health check called")
     return {"status": "healthy"}
 
 
 @app.post("/start-game")
 def start_game(request: StartGameRequest):
+    logger.info("POST /start-game - starting game with players: %s", request.players)
     return {"message": "Game started", "players": request.players}
 
 
 @app.post("/wheel/spin", response_model=WheelSpinResponse)
 def spin_wheel(request: WheelSystemRequest):
+    logger.info("POST /wheel/spin - spinning wheel")
     if request.request_type == "SpinWheel":
         outcome = SpinWheel()
         return {"outcome": outcome}
@@ -144,26 +152,25 @@ def spin_wheel(request: WheelSystemRequest):
 
 @app.post("/turn", response_model=TurnPayload)
 def create_turn(request: SpinWheelRequest):
+    logger.info("POST /turn - creating turn with category '%s'", request.category)
     outcome = SpinWheel()
     return build_turn_payload(str(outcome), question_service, request.category)
 
 
-@app.post("/spin-wheel", response_model=WheelSpinResponse)
-def spin_wheel_compat(request: WheelSystemRequest):
-    return spin_wheel(request)
-
-
 @app.post("/answer")
 def submit_answer(request: AnswerSubmissionRequest):
+    logger.info("POST /answer - player '%s' submitting answer", request.player)
     if request.answer == request.correct_choice:
         AddScore(request.player, request.points)
         return {"correct": True, "message": "Correct answer!", "player": request.player}
 
+    SubtractScore(request.player, request.points)
     return {"correct": False, "message": "Incorrect answer.", "player": request.player}
 
 
 @app.post("/scoring/add", response_model=ScoreOperationResponse)
 def add_score_endpoint(request: ScoringSystemRequest):
+    logger.info("POST /scoring/add - adding score for player '%s'", request.player)
     if request.request_type == "AddScore" and request.player and request.points:
         result = AddScore(request.player, request.points)
         return {"message": result, "player": request.player, "points": request.points}
@@ -172,6 +179,7 @@ def add_score_endpoint(request: ScoringSystemRequest):
 
 @app.post("/scoring/subtract", response_model=ScoreOperationResponse)
 def subtract_score_endpoint(request: ScoringSystemRequest):
+    logger.info("POST /scoring/subtract - subtracting score for player '%s'", request.player)
     if request.request_type == "SubtractScore" and request.player and request.points:
         result = SubtractScore(request.player, request.points)
         return {"message": result, "player": request.player, "points": request.points}
@@ -180,6 +188,7 @@ def subtract_score_endpoint(request: ScoringSystemRequest):
 
 @app.post("/scoring/bankrupt", response_model=BankruptResponse)
 def apply_bankrupt_endpoint(request: ScoringSystemRequest):
+    logger.info("POST /scoring/bankrupt - applying bankrupt for player '%s'", request.player)
     if request.request_type == "ApplyBankrupt" and request.player:
         result = ApplyBankrupt(request.player)
         return {"message": result, "player": request.player}
@@ -188,12 +197,14 @@ def apply_bankrupt_endpoint(request: ScoringSystemRequest):
 
 @app.get("/scoring/{player}", response_model=ScoreResponse)
 def get_score_endpoint(player: str):
+    logger.info("GET /scoring/%s - getting score", player)
     score = GetScore(player)
     return {"player": player, "score": score}
 
 
 @app.get("/scoring/winner", response_model=WinnerResponse)
 def get_winner_endpoint():
+    logger.info("GET /scoring/winner - determining winner")
     winner = DetermineWinner()
     if winner:
         return {"winner": winner}
@@ -202,24 +213,28 @@ def get_winner_endpoint():
 
 @app.post("/question/load", response_model=QuestionResponse)
 def load_questions():
+    logger.info("POST /question/load - loading questions")
     result = question_service.LoadQuestions()
     return {"message": result}
 
 
 @app.post("/question/save", response_model=QuestionResponse)
 def save_questions():
+    logger.info("POST /question/save - saving questions")
     result = question_service.SaveQuestions()
     return {"message": result}
 
 
 @app.get("/question/categories", response_model=CategoriesResponse)
 def get_categories():
+    logger.info("GET /question/categories - getting categories")
     result = question_service.GetCategories()
     return {"message": result, "categories": question_service.categories}
 
 
 @app.get("/question/random/{category}", response_model=RandomQuestionResponse)
 def get_random_question(category: str):
+    logger.info("GET /question/random/%s - getting random question", category)
     try:
         question = question_service.GetRandomQuestion(category)
         return {"category": category, "question": question}
@@ -229,23 +244,27 @@ def get_random_question(category: str):
 
 @app.post("/question/mark-used/{category}/{question}", response_model=QuestionResponse)
 def mark_question_used(category: str, question: str):
+    logger.info("POST /question/mark-used/%s/%s - marking question used", category, question)
     result = question_service.MarkQuestionUsed(category, question)
     return {"message": result}
 
 
 @app.post("/question/create", response_model=QuestionResponse)
 def create_question(category: str, question: str, answer_choices: UpdateAnswerChoices):
+    logger.info("POST /question/create - creating question for category '%s'", category)
     result = question_service.CreateQuestion(category, question, answer_choices)
     return {"message": result}
 
 
 @app.put("/question/update", response_model=QuestionResponse)
 def update_question(category: str, question: str, answer_choices: UpdateAnswerChoices):
+    logger.info("PUT /question/update - updating question for category '%s'", category)
     result = question_service.UpdateQuestion(category, question, answer_choices)
     return {"message": result}
 
 
 @app.delete("/question/delete/{category}/{question_id}", response_model=QuestionResponse)
 def delete_question(category: str, question_id: str):
+    logger.info("DELETE /question/delete/%s/%s - deleting question", category, question_id)
     result = question_service.DeleteQuestion(category, question_id)
     return {"message": result}

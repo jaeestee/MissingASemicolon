@@ -1,9 +1,12 @@
 """This module contains the service functions for the question repository."""
 
 import csv
+import logging
 import random
 
 from backend.question_repository.schema import QuestionAndAnswer, UpdateAnswerChoices
+
+logger = logging.getLogger("uvicorn")
 
 
 class QuestionService:
@@ -15,10 +18,13 @@ class QuestionService:
     questions: list[QuestionAndAnswer] = list()
 
     def __init__(self):
+        logger.info("Initializing QuestionService")
         self.LoadQuestions()
 
     def LoadQuestions(self):
         """This function loads all the questions + answers into the database."""
+
+        logger.info("Loading questions from CSV file")
 
         with open(
             "backend/question_repository/question-and-answers.csv",
@@ -28,10 +34,13 @@ class QuestionService:
             reader = csv.DictReader(file)
             self.all_questions = [QuestionAndAnswer(**row) for row in reader]
 
+        logger.info("Loaded %d questions", len(self.all_questions))
         return "Loaded the questions and answers!"
 
     def SaveQuestions(self):
         """This function saves the 5 questions for each of the 6 categories into the database."""
+
+        logger.info("Saving 5 questions per category for categories: %s", self.categories)
         self.questions = []
         for category in self.categories:
             category_questions = [
@@ -43,38 +52,43 @@ class QuestionService:
             ]
             self.questions.extend(random.sample(category_questions, 5))
 
+        logger.info("Saved a total of %d questions", len(self.questions))
         return "Saved the 5 questions for all 6 categories!"
 
     def GetCategories(self):
         """This function chooses 6 random categories and stores them in the database."""
 
-        # Get all the unique categories from the questions
         categories = sorted({question.category for question in self.all_questions})
-        # Choose {self.number_of_categories} random categories from the list of unique categories
         self.categories = random.sample(categories, self.number_of_categories)
 
+        logger.info("Selected %d categories: %s", self.number_of_categories, self.categories)
         return f"Got the 6 categories: {', '.join(self.categories)}!"
 
     def GetRandomQuestion(self, category):
         """This function gets a random question for a given category."""
 
+        logger.info("Getting a random question for category '%s'", category)
         for q in self.questions:
             if q.category == category:
                 self.MarkQuestionUsed(category, q.question)
                 break
         else:
+            logger.error("No question found for category '%s'", category)
             raise ValueError(f"No question found for category: {category}")
 
+        logger.info("Selected question: '%s' for category '%s'", q.question, category)
         return q.question
 
     def MarkQuestionUsed(self, category, question):
         """This function marks a question as used for a given category"""
 
+        logger.info("Marking question '%s' as used for category '%s'", question, category)
         for q in self.questions:
             if q.category == category and q.question == question:
                 q.used = True
                 break
         else:
+            logger.error("No question found for category '%s' and question '%s'", category, question)
             raise ValueError(
                 f"No question found for category: {category} and question: {question}"
             )
@@ -84,6 +98,7 @@ class QuestionService:
     def CreateQuestion(self, category, question, answer_choices: UpdateAnswerChoices):
         """This function creates a new question for a given category"""
 
+        logger.info("Creating new question for category '%s': '%s'", category, question)
         new_question = QuestionAndAnswer(
             category=category,
             question=question,
@@ -100,6 +115,7 @@ class QuestionService:
     def UpdateQuestion(self, category, question, answer_choices: UpdateAnswerChoices):
         """This function updates a question for a given category"""
 
+        logger.info("Updating question '%s' for category '%s'", question, category)
         for q in self.all_questions:
             if q.category == category and q.question == question:
                 q.correct_choice = answer_choices.correct_choice or q.correct_choice
@@ -107,6 +123,7 @@ class QuestionService:
                 q.choice_c = answer_choices.choice_c or q.choice_c                    
                 break
         else:
+            logger.error("No question found for category '%s' and question '%s'", category, question)
             raise ValueError(
                 f"No question found for category: {category} and question: {question}"
             )
@@ -116,11 +133,13 @@ class QuestionService:
     def DeleteQuestion(self, category, question_id):
         """This function deletes a question for a given category"""
 
+        logger.info("Deleting question '%s' from category '%s'", question_id, category)
         for q in self.all_questions:
             if q.category == category and q.question == question_id:
                 self.all_questions.remove(q)
                 break
         else:
+            logger.error("No question found for category '%s' and question id '%s'", category, question_id)
             raise ValueError(
                 f"No question found for category: {category} and question id: {question_id}"
             )
